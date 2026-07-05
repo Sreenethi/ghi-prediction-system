@@ -1,5 +1,9 @@
 # GHI Prediction System
 
+[![Live Demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app/)
+
+**🔗 Live app: [ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app](https://ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app/)**
+
 Production pipeline and web app for predicting Global Horizontal Irradiance
 (GHI) from daily weather and cloud-sensor data.
 
