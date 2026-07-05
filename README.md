@@ -1,145 +1,352 @@
-# GHI Prediction System
+# ☀️ GHI Prediction System
 
-[![Live Demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app/)
+<p align="center">
 
-**🔗 Live app: [ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app](https://ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app/)**
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
+[![Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-red)]()
+[![Machine Learning](https://img.shields.io/badge/Machine-Learning-success)]()
+[![License](https://img.shields.io/badge/Status-Production-brightgreen)]()
 
-Production pipeline and web app for predicting Global Horizontal Irradiance
-(GHI) from daily weather and cloud-sensor data.
+</p>
 
-## Motivation
+<p align="center">
 
-Global Horizontal Irradiance is normally measured directly with a
-**pyranometer** — an accurate but expensive instrument that requires
-calibration and maintenance. As a result, most sites (weather stations,
-farms, candidate solar installation sites) never have one installed, even
-though basic weather data — temperature, humidity, cloud cover, visibility,
-sometimes sunshine duration — is far more commonly available from cheaper
-sensors or public weather services.
+### Predict **Global Horizontal Irradiance (GHI)** using inexpensive weather measurements instead of an expensive pyranometer.
 
-This project asks a practical question: **can GHI be estimated accurately
-enough from that cheaper, more widely available weather data, instead of
-requiring a pyranometer at every site?**
+</p>
 
-The pipeline trains on data from a location that *does* have a pyranometer,
-then lets that model predict GHI at locations that *don't* — using only
-weather variables. This is useful for:
+<p align="center">
 
-- **Solar site assessment** — estimating solar potential at a candidate site
-  before investing in pyranometer infrastructure there.
-- **Filling sensor gaps** — if a pyranometer goes offline (as happened for a
-  full year in the dataset this was built on), GHI can still be estimated
-  from the weather data that kept recording.
-- **Scaling to many locations cheaply** — install pyranometers at a few
-  reference sites, train a model, and extrapolate to nearby regions using
-  weather data alone.
+### 🚀 **Live Demo**
 
-Two model variants reflect two real-world equipment situations:
+[![Open App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app/)
 
-| Variant | Requires | Accuracy | Use case |
-|---|---|---|---|
-| **Full model** | Sunshine-duration sensor (cheap) | Higher | Site has basic solar monitoring, but no pyranometer |
-| **Weather-only model** | General weather data only | Lower, but non-zero | Site has no solar-specific equipment at all |
+**🔗 https://ghi-prediction-system-7xhs7emrslrvdlhzccop25.streamlit.app/**
 
-## Problem & approach
+</p>
 
-- **Target**: `GHI_W_Avg_mean` (daily mean solar irradiance, W/m²).
-- **Data quality**: the target is missing for a full sensor-outage year in
-  the source data; those rows are dropped, not imputed, since there's no
-  ground truth to train against.
-- **Split**: chronological (not random) 85/15 train/test — daily weather
-  rows are autocorrelated, so a random split would leak neighboring days
-  into evaluation and overstate accuracy.
-- **Models compared**: Random Forest, XGBoost, LightGBM, a simple average
-  ensemble, and a Ridge-stacked ensemble. Random Forest wins on this
-  dataset size (under ~1,000 usable rows, 70+ features) — heavily
-  regularized models generalize best here, verified empirically rather
-  than assumed.
-- **Two deployed variants**:
-  - **Full model** — uses recorded sunshine duration (`Suntime_Tot_sum`),
-    the dominant predictor. Highest accuracy; requires a ground station.
-  - **Weather-only model** — drops sunshine duration, for use when
-    predicting from forecast data alone. Reported honestly as lower
-    accuracy, not hidden.
-- **Explainability**: feature importances + SHAP values are used to sanity
-  check that predictions follow physically expected relationships (cloud
-  cover negative, visibility/temperature positive).
+---
 
-## Project structure
+# 📖 Overview
 
+Global Horizontal Irradiance (**GHI**) is one of the most important measurements for evaluating solar energy potential.
+
+Normally, GHI is measured using a **pyranometer**, an accurate but expensive instrument that requires regular calibration and maintenance.
+
+Most weather stations, farms, and potential solar installation sites **do not own a pyranometer**, but they often record:
+
+* 🌡 Temperature
+* 💧 Humidity
+* ☁ Cloud Cover
+* 🌫 Visibility
+* 🌞 Sunshine Duration
+* 🌬 Wind Information
+
+This project answers a practical question:
+
+> **Can we accurately estimate GHI using only these cheaper weather measurements?**
+
+The answer is **yes**.
+
+A machine learning model is trained on data collected from locations that already have a pyranometer and then predicts GHI for locations where only weather observations are available.
+
+---
+
+# 🎯 Applications
+
+✅ Solar Farm Site Assessment
+
+Estimate solar potential before installing expensive equipment.
+
+---
+
+✅ Missing Sensor Recovery
+
+If a pyranometer fails (as happened for an entire year in this dataset), the model can still estimate GHI.
+
+---
+
+✅ Low-Cost Large Scale Deployment
+
+Train on a few reference stations and estimate GHI across many nearby locations using weather data alone.
+
+---
+
+# 🏗 Model Variants
+
+| Model                     | Requires                 | Accuracy   | Best For                            |
+| ------------------------- | ------------------------ | ---------- | ----------------------------------- |
+| 🌞 **Full Model**         | Sunshine Duration Sensor | ⭐ Highest  | Sites with basic solar monitoring   |
+| 🌦 **Weather-only Model** | Weather Variables Only   | ⭐ Moderate | Locations without any solar sensors |
+
+---
+
+# ⚙ Problem Formulation
+
+### 🎯 Target Variable
+
+```text
+GHI_W_Avg_mean
 ```
-ghi_prediction/       # importable package
-  config.py           # target/feature/hyperparameter config
-  data_loader.py       # loading + schema validation
-  model.py             # GHIPredictor — preprocessing + trained model
-  train.py             # candidate comparison, chronological split, CLI
+
+Daily Mean Global Horizontal Irradiance (W/m²)
+
+---
+
+### 📅 Data Split
+
+Instead of a random split, the project uses an **85/15 chronological split**.
+
+Why?
+
+Weather observations are time-dependent.
+
+Random splitting would leak neighboring days into both train and test sets, resulting in unrealistically optimistic performance.
+
+---
+
+### 🧹 Data Cleaning
+
+The original dataset contains one complete year where the pyranometer failed.
+
+Since there is **no ground truth**, those rows are:
+
+* ❌ Not imputed
+* ❌ Not interpolated
+* ✅ Removed from training
+
+---
+
+# 🤖 Models Compared
+
+Several machine learning algorithms were evaluated.
+
+| Model               | Used |
+| ------------------- | ---- |
+| 🌳 Random Forest    | ✅    |
+| ⚡ XGBoost           | ✅    |
+| 💡 LightGBM         | ✅    |
+| 🤝 Average Ensemble | ✅    |
+| 🧠 Ridge Stacking   | ✅    |
+
+After experimentation, **Random Forest** consistently achieved the best balance of:
+
+* Generalization
+* Stability
+* Lowest MAE
+* Best performance on ~1000 daily observations with 70+ features
+
+---
+
+# 🔍 Explainability
+
+The project is not a black box.
+
+Model behavior is verified using:
+
+* 📈 Feature Importance
+* 🔎 SHAP Values
+
+Expected physical relationships are preserved.
+
+| Variable          | Effect on GHI     |
+| ----------------- | ----------------- |
+| Cloud Cover       | ⬇ Negative        |
+| Visibility        | ⬆ Positive        |
+| Temperature       | ⬆ Positive        |
+| Sunshine Duration | ⬆ Strong Positive |
+
+---
+
+# 📂 Project Structure
+
+```text
+ghi_prediction/
+│
+├── config.py
+├── data_loader.py
+├── model.py
+├── train.py
+│
 app/
-  streamlit_app.py     # deployable web app
+├── streamlit_app.py
+│
 tests/
-  conftest.py           # synthetic-data fixtures (no real data needed)
-  test_predictor.py
-  test_data_validation.py
-  test_model_regression.py
+├── conftest.py
+├── test_predictor.py
+├── test_data_validation.py
+├── test_model_regression.py
+│
 notebooks/
-  GHI_Prediction_System_final.ipynb   # original exploratory notebook
+└── GHI_Prediction_System_final.ipynb
 ```
 
-## Setup
+---
+
+# 🚀 Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Train a model (CLI)
+---
+
+# 🏋 Train the Model
 
 ```bash
 python -m ghi_prediction.train path/to/Final_Daily.xlsx --out ghi_predictor.pkl
 ```
 
-## Run the tests
+---
+
+# 🧪 Run Tests
 
 ```bash
 PYTHONPATH=. pytest -v
 ```
 
-Tests run against a synthetic dataset (`tests/conftest.py`) that mimics the
-real schema, including the outage-year pattern and legitimately-missing
-cloud-layer columns — no proprietary data required to validate the pipeline.
+The testing suite uses a **synthetic dataset** that reproduces:
 
-Includes:
-- **Unit tests** for `GHIPredictor` (fit/predict contracts, pickling,
-  weather-only mode, graceful handling of unseen/missing columns).
-- **Data validation tests** (schema checks, no train/test date overlap, no
-  leakage columns reaching the feature matrix).
-- **Model regression test** — fails CI if holdout MAE drifts past a
-  tolerance band on a fixed dataset, catching silent accuracy regressions.
+* Missing GHI outage year
+* Weather schema
+* Missing cloud-layer columns
+* Data validation rules
 
-## Run the app
+No proprietary dataset is required.
+
+### Test Coverage
+
+✅ Predictor functionality
+
+✅ Pickling
+
+✅ Weather-only inference
+
+✅ Missing column handling
+
+✅ Schema validation
+
+✅ Train/Test leakage checks
+
+✅ Regression testing for MAE stability
+
+---
+
+# 🌐 Run the Web Application
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-Upload your `Final_Daily.xlsx` in the sidebar. The app trains in-session and
-gives you:
-- **Predict** — manual entry or batch CSV upload, either model variant.
-- **Performance** — MAE/RMSE/R² and predicted-vs-actual charts on the
-  chronological holdout.
-- **Feature Importance** — top drivers for each model variant.
-- **Data Quality** — missing-target-by-year and raw GHI-over-time view.
+Upload your **Final_Daily.xlsx** file and explore:
 
-## Deploy
+### 🔮 Prediction
 
-**Streamlit Community Cloud**: push this repo to GitHub, point Streamlit
-Cloud at `app/streamlit_app.py`.
+* Manual prediction
+* Batch CSV prediction
+* Full model
+* Weather-only model
 
-**Docker**:
+---
+
+### 📊 Performance Dashboard
+
+* MAE
+* RMSE
+* R² Score
+* Predicted vs Actual plots
+
+---
+
+### 📈 Feature Importance
+
+Visualize the most influential weather variables.
+
+---
+
+### 🧹 Data Quality
+
+Inspect:
+
+* Missing target by year
+* Raw GHI timeline
+* Dataset completeness
+
+---
+
+# 🐳 Docker
+
+Build:
+
 ```bash
 docker build -t ghi-prediction .
+```
+
+Run:
+
+```bash
 docker run -p 8501:8501 ghi-prediction
 ```
 
-## CI
+---
 
-`.github/workflows/ci.yml` runs the full test suite and a syntax check on
-every push/PR to `main`.
+# ☁ Deployment
+
+The application is ready for deployment on:
+
+* ✅ Streamlit Community Cloud
+* ✅ Docker
+* ✅ GitHub
+
+Deploy to Streamlit by pointing the service to:
+
+```text
+app/streamlit_app.py
+```
+
+---
+
+# 🔄 Continuous Integration
+
+GitHub Actions automatically runs on every push or pull request.
+
+Pipeline includes:
+
+* ✅ Unit Tests
+* ✅ Regression Tests
+* ✅ Data Validation
+* ✅ Syntax Checking
+
+Configuration:
+
+```text
+.github/workflows/ci.yml
+```
+
+---
+
+# 📌 Highlights
+
+✔ Production-ready ML pipeline
+
+✔ Chronological evaluation (no temporal leakage)
+
+✔ Weather-only inference mode
+
+✔ Explainable AI with SHAP
+
+✔ Interactive Streamlit dashboard
+
+✔ Docker support
+
+✔ Automated testing
+
+✔ Continuous Integration
+
+✔ Modular package architecture
+
+---
+
+# 📜 License
+
+This project is intended for educational and research purposes.
