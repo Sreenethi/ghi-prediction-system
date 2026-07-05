@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pkl
+.pytest_cache/
+Final_Daily.xlsx
+*.xlsx
+.venv/
+venv/
+.DS_Store
