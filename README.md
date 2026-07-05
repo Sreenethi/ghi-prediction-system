@@ -3,6 +3,40 @@
 Production pipeline and web app for predicting Global Horizontal Irradiance
 (GHI) from daily weather and cloud-sensor data.
 
+## Motivation
+
+Global Horizontal Irradiance is normally measured directly with a
+**pyranometer** — an accurate but expensive instrument that requires
+calibration and maintenance. As a result, most sites (weather stations,
+farms, candidate solar installation sites) never have one installed, even
+though basic weather data — temperature, humidity, cloud cover, visibility,
+sometimes sunshine duration — is far more commonly available from cheaper
+sensors or public weather services.
+
+This project asks a practical question: **can GHI be estimated accurately
+enough from that cheaper, more widely available weather data, instead of
+requiring a pyranometer at every site?**
+
+The pipeline trains on data from a location that *does* have a pyranometer,
+then lets that model predict GHI at locations that *don't* — using only
+weather variables. This is useful for:
+
+- **Solar site assessment** — estimating solar potential at a candidate site
+  before investing in pyranometer infrastructure there.
+- **Filling sensor gaps** — if a pyranometer goes offline (as happened for a
+  full year in the dataset this was built on), GHI can still be estimated
+  from the weather data that kept recording.
+- **Scaling to many locations cheaply** — install pyranometers at a few
+  reference sites, train a model, and extrapolate to nearby regions using
+  weather data alone.
+
+Two model variants reflect two real-world equipment situations:
+
+| Variant | Requires | Accuracy | Use case |
+|---|---|---|---|
+| **Full model** | Sunshine-duration sensor (cheap) | Higher | Site has basic solar monitoring, but no pyranometer |
+| **Weather-only model** | General weather data only | Lower, but non-zero | Site has no solar-specific equipment at all |
+
 ## Problem & approach
 
 - **Target**: `GHI_W_Avg_mean` (daily mean solar irradiance, W/m²).
